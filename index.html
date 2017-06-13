@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.0.0/dygraph.min.js"></script>
+	<link rel="stylesheet" src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.0.0/dygraph.min.css" />
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet">
+	<script src="synchronizer.js"></script>
+	<title>Dygraphs</title>
+</head>
+<body>
+	<h2>Dygraphs - Historic Weather Data</h2>
+
+	<b>Zoom:</b>
+	<a href="#" id="hour">hour</a> 
+	<a href="#" id="day">day</a> 
+	<a href="#" id="week">week</a> 
+	<a href="#" id="month">month</a> 
+	<a href="#" id="reset">reset</a>
+	<b>Pan:</b> 
+	<a href="#" id="left">left</a> 
+	<a href="#" id="right">right</a> 	
+
+	<div id="container">
+	<!-- first graph -->
+		<div id="legendId">
+			<h3>Temperature</h3>
+			<div id="legend-labels">
+				<div class='line' style="border-bottom: 2px solid #F16958"></div> <span style="color: #F16958">Air Temperature(oC)</span> 
+				<div class='line' style="border-bottom: 2px solid #A2489A"></div> <span style="color: #A2489A">Dew Point(oC)</span> 
+				<div class='line' style="border-bottom: 2px solid #00b33c"></div> <span style="color: #00b33c">Soil Temperature(oC)</span>
+			</div>
+		</div>
+		<div id="graphdiv1" class="graph" style="width:100%"></div>
+
+		<!-- second graph -->
+		<div id="legendId2">
+			<h3>Precipitation</h3>
+			<div id="legend-labels">
+				<div class='line' style="border-bottom: 2px solid #98B7D6"></div> <span style="color: #98B7D6">Precipitation(mm)</span> 
+				<div class='line' style="border-bottom: 2px solid #636467"></div> <span style="color: #636467">Humidity(%)</span> 
+				<div class='line' style="border-bottom: 2px solid #009999"></div> <span style="color: #009999">Leaf Wetness(fraction)</span> 
+				<div class='line' style="border-bottom: 2px solid #00b33c"></div> <span style="color: #00b33c">EvapoTranspiration(mm)</span> 
+			</div>
+		</div>
+		<div id="graphdiv2" class="graph" style="width:100%"></div>
+
+		<!-- third graph -->
+		<div id="legendId3">
+			<h3>Wind</h3>
+			<div id="legend-labels">
+				<div class='line' style="border-bottom: 2px solid #F16958"></div> <span style="color: #F16958">Wind Gust(kmph)</span> 
+				<div class='line' style="border-bottom: 2px solid #A2489A"></div> <span style="color: #A2489A">Wind Speed(kmph)</span> 
+			</div>
+		</div>
+		<div id="graphdiv3" class="graph" style="width:100%"></div>
+
+		<!-- fourth graph -->
+		<div id="legendId4">
+			<h3>Solar</h3>
+			<div id="legend-labels">
+				<div class='line' style="border-bottom: 2px solid #F16958"></div> <span style="color: #F16958">Solar Radiation(W/m_)</span> 
+				<div class='line' style="border-bottom: 2px solid #A2489A"></div> <span style="color: #A2489A">Hour of Sun(mins)</span>
+				<div class='line' style="border-bottom: 2px solid #00b33c"></div> <span style="color: #00b33c">UV Index(class)</span> 
+			</div>
+		</div>
+		<div id="graphdiv4" class="graph" style="width:100%"></div>
+
+
+		<div id="popup">
+			<h3 class="popup-header"></h3>
+			<div>
+				<table>
+					<tbody class="popup-content"></tbody>
+				</table>
+			</div>
+		</div>	
+
+	</div> 
+
+
+	<script type="text/javascript">
+
+	var colorSets = ['#F16958', '#A2489A', '#00b33c', '#98B7D6', '#00b33c', '#A2489A', '#F16958', '#636467', '#F16958', null, '#009999', '#00b33c', null, '#A2489A'];
+
+	  var g1 = new Dygraph(
+	    document.getElementById("graphdiv1"),
+	    "HistoricWeather.csv",
+	    {
+	    	visibility: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false],
+      		colors: colorSets,
+      		strokeWidth: 2,
+      		gridLineColor: 'rgba(235, 235, 236, 100)',
+      		axes: {
+      			x: {
+      				drawGrid: false
+      			},
+      			y: {
+      				axisLineColor: '#fff',
+      				pixelsPerLabel: 20
+      			}
+      		},
+      		underlayCallback: function(canvas, area, g1){
+      			var highlight_start = '2017-04-13 1:00:00 am';
+      			var highlight_end = '2017-04-13 12:00:00 am';
+
+      			highlight_start = highlight_start.replace(/-/ig,'/');
+      			var d1 = new Date(highlight_start);
+
+      			highlight_end = highlight_end.replace(/-/ig,'/');
+      			var d2 = new Date(highlight_end);
+
+      			var bottom_left = g1.toDomXCoord(d1.getTime());
+	            var top_right = g1.toDomXCoord(d2.getTime());
+
+	            var left = bottom_left;
+	            var right = top_right;
+
+	            canvas.fillStyle = "rgba(0, 79, 157, 100)";
+	            canvas.fillRect(left, area.y, right - left, area.h);
+      		},
+      		showLabelsOnHighlight: false,
+      		highlightCallback: function(event, x, points, row, seriesName){
+      			var domX = g1.toDomXCoord(x);
+      			$('#popup').css('left', domX);
+      			$("#popup .popup-content").empty();
+      			//console.log(Math.max(points[0].yval));
+      			for (var i = 0; i < points.length; i++) {
+      				var newDate = new Date(points[i].xval);
+      				
+      				var color = g1.getPropertiesForSeries(points[i].name).color;
+      				$('#popup .popup-header').text(newDate.getDate() + '/' + newDate.getMonth() + '/' + newDate.getFullYear() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + '0');
+      				$('#popup .popup-content').append(
+      					$('<tr></tr>').append(
+      						$('<td></td>').append(
+      							$('<span></span>').css('color', color).append(points[i].name + ': ')
+      							),
+      						$('<td></td>').append(points[i].yval)
+      						)
+      					);
+      			}
+      			$('#popup').show();
+      		},     		
+            pointClickCallback: function(event, point){
+                console.log('point clicked ' + point.name + point.y);
+            },
+            clickCallback: function(event, x, point){
+                console.log('graph clicked');
+            }
+	    }),
+	  g2 = new Dygraph(
+	  	document.getElementById("graphdiv2"),
+
+	    "HistoricWeather.csv",
+
+	    {
+	    	visibility: [false, false, false, true, true, false, false, true, false, false, true, false, false, false, false],
+	    	colors: colorSets,
+	    	strokeWidth: 2,
+      		series: {
+      			'Humidity(%)' : {
+      				axis: 'y2'
+      			},
+      			'Precipitation(mm)' : {
+      				plotter: barChartPlotter
+      			}
+      		},
+      		gridLineColor: 'rgba(235, 235, 236, 100)',
+      		axes: {
+      			x: {
+      				drawGrid: false
+      			},
+      			y: {
+      				axisLineColor: '#fff',
+      				pixelsPerLabel: 20
+      			}
+      		},
+      		underlayCallback: function(canvas, area, g1){
+      			var highlight_start = '2017-04-13 1:00:00 am';
+      			var highlight_end = '2017-04-13 12:00:00 am';
+
+      			highlight_start = highlight_start.replace(/-/ig,'/');
+      			var d1 = new Date(highlight_start);
+
+      			highlight_end = highlight_end.replace(/-/ig,'/');
+      			var d2 = new Date(highlight_end);
+
+      			var bottom_left = g1.toDomXCoord(d1.getTime());
+	            var top_right = g1.toDomXCoord(d2.getTime());
+
+	            var left = bottom_left;
+	            var right = top_right;
+
+	            canvas.fillStyle = "rgba(0, 79, 157, 100)";
+	            canvas.fillRect(left, area.y, right - left, area.h);
+      		},
+      		showLabelsOnHighlight: false,
+      		highlightCallback: function(event, x, points, row, seriesName){
+      			var domX = g2.toDomXCoord(x);
+      			$('#popup').css('left', domX);
+      			$("#popup .popup-content").empty();
+      			for (var i = 0; i < points.length; i++) {
+      				var newDate = new Date(points[i].xval);
+
+      				var color = g2.getPropertiesForSeries(points[i].name).color;
+      				$('#popup .popup-header').text(newDate.getDate() + '/' + newDate.getMonth() + '/' + newDate.getFullYear() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + '0');
+      				$('#popup .popup-content').append(
+      					$('<tr></tr>').append(
+      						$('<td></td>').append(
+      							$('<span></span>').css('color', color).append(points[i].name + ': ')
+      							),
+      						$('<td></td>').append(points[i].yval)
+      						)
+      					);
+      			}
+      			$('#popup').show();
+      		}
+	    }),
+		g3 = new Dygraph(
+	  	document.getElementById("graphdiv3"),
+
+	    "HistoricWeather.csv",
+
+	    {
+	    	visibility: [false, false, false, false, false, true, true, false, false, false, false, false, false, false, false],
+      		valueRange: [0, 80],
+      		strokeWidth: 2,
+      		colors: colorSets,
+      		gridLineColor: 'rgba(235, 235, 236, 100)',
+      		axes: {
+      			x: {
+      				drawGrid: false
+      			},
+      			y: {
+      				axisLineColor: '#fff',
+      				pixelsPerLabel: 20
+      			}
+      		},
+      		underlayCallback: function(canvas, area, g1){
+      			var highlight_start = '2017-04-13 1:00:00 am';
+      			var highlight_end = '2017-04-13 12:00:00 am';
+
+      			highlight_start = highlight_start.replace(/-/ig,'/');
+      			var d1 = new Date(highlight_start);
+
+      			highlight_end = highlight_end.replace(/-/ig,'/');
+      			var d2 = new Date(highlight_end);
+
+      			var bottom_left = g1.toDomXCoord(d1.getTime());
+	            var top_right = g1.toDomXCoord(d2.getTime());
+
+	            var left = bottom_left;
+	            var right = top_right;
+
+	            canvas.fillStyle = "rgba(0, 79, 157, 100)";
+	            canvas.fillRect(left, area.y, right - left, area.h);
+      		},
+      		showLabelsOnHighlight: false,
+      		highlightCallback: function(event, x, points, row, seriesName){
+      			var domX = g3.toDomXCoord(x);
+      			$('#popup').css('left', domX);
+      			$("#popup .popup-content").empty();
+      			for (var i = 0; i < points.length; i++) {
+      				var newDate = new Date(points[i].xval);
+
+      				var color = g3.getPropertiesForSeries(points[i].name).color;
+      				$('#popup .popup-header').text(newDate.getDate() + '/' + newDate.getMonth() + '/' + newDate.getFullYear() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + '0');
+      				$('#popup .popup-content').append(
+      					$('<tr></tr>').append(
+      						$('<td></td>').append(
+      							$('<span></span>').css('color', color).append(points[i].name + ': ')
+      							),
+      						$('<td></td>').append(points[i].yval)
+      						)
+      					);
+      			}
+      			$('#popup').show();
+      		}
+	    }),
+	  	g4 = new Dygraph(
+	  	document.getElementById("graphdiv4"),
+
+	    "HistoricWeather.csv",
+
+	    {
+	    	visibility: [false, false, false, false, false, false, false, false, true, false, false, true, false, true, false],
+      		series: {
+      			'Solar Radiation(W/m_)' : {
+      				axis: 'y2',
+      				fillGraph: true
+      			}
+      		},
+      		gridLineColor: 'rgba(235, 235, 236, 100)',
+      		valueRange: [0, 100],
+      		colors: colorSets,
+      		strokeWidth: 2,
+      		axes: {
+      			x: {
+      				drawGrid: false
+      			},
+      			y: {
+      				axisLineColor: '#fff',
+      				pixelsPerLabel: 20
+      			},
+      			y2: {
+      				axisLineColor: '#fff'
+      			}
+      		},
+      		underlayCallback: function(canvas, area, g1){
+      			var highlight_start = '2017-04-13 1:00:00 am';
+      			var highlight_end = '2017-04-13 12:00:00 am';
+
+      			highlight_start = highlight_start.replace(/-/ig,'/');
+      			var d1 = new Date(highlight_start);
+
+      			highlight_end = highlight_end.replace(/-/ig,'/');
+      			var d2 = new Date(highlight_end);
+
+      			var bottom_left = g1.toDomXCoord(d1.getTime());
+	            var top_right = g1.toDomXCoord(d2.getTime());
+
+	            var left = bottom_left;
+	            var right = top_right;
+
+	            canvas.fillStyle = "rgba(0, 79, 157, 100)";
+	            canvas.fillRect(left, area.y, right - left, area.h);
+      		},
+      		showLabelsOnHighlight: false,
+      		highlightCallback: function(event, x, points, row, seriesName){
+      			var domX = g4.toDomXCoord(x);
+      			$('#popup').css('left', domX);
+      			$("#popup .popup-content").empty();
+      			for (var i = 0; i < points.length; i++) {
+      				var newDate = new Date(points[i].xval);
+
+      				var color = g4.getPropertiesForSeries(points[i].name).color;
+      				$('#popup .popup-header').text(newDate.getDate() + '/' + newDate.getMonth() + '/' + newDate.getFullYear() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + '0');
+      				$('#popup .popup-content').append(
+      					$('<tr></tr>').append(
+      						$('<td></td>').append(
+      							$('<span></span>').css('color', color).append(points[i].name + ': ')
+      							),
+      						$('<td></td>').append(points[i].yval)
+      						)
+      					);
+      			}
+      			$('#popup').show();
+      		}
+	    });
+
+	  var sync = Dygraph.synchronize(g1, g2, g3, g4, {
+	  	zoom: true,
+	  	selection: true,
+	  	range: false
+	  });
+
+	  $('.graph').mouseleave(function( ) {
+	  		if ($('#popup:hover').length == 0)
+	    		$('#popup').hide();
+		});
+
+		$('#popup').mouseleave(function() {
+	  		if ($('.graph:hover').length == 0) 
+	    		$('#popup').hide();
+		});
+
+	$(document).on('mousemove', function(e){
+	    $('#popup').css({
+	       left:  e.pageX + 35,
+	       top:   e.pageY + 35
+	    });
+	});
+
+	//function that draws the bar chart starts here
+	function barChartPlotter(e){
+		var ctx = e.drawingContext;
+		var points = e.points;
+		var y_bottom = e.dygraph.toDomYCoord(0);
+
+		ctx.fillStyle = "rgba(152, 183, 214, 100)";
+
+		//find the minimum separation between x-values
+		//this determines the bar width
+		var min_sep = Infinity;
+		for (var i = 1; i < points.length; i++) {
+			var sep = points[i].canvasx - points[i-1].canvasx;
+			if(sep < min_sep)
+				min_sep = sep;
+		}
+
+		var bar_width = Math.floor(2.0 / 3 * min_sep);
+
+		for (var i = 0; i < points.length; i++) {
+			var p = points[i];
+			var center_x = p.canvasx;
+
+			ctx.fillRect(center_x - bar_width / 2, p.canvasy, bar_width, y_bottom - p.canvasy);
+			ctx.strokeRect(center_x - bar_width / 2, p.canvasy, bar_width, y_bottom - p.canvasy);
+		}
+	}
+
+	  // zoom logic starts here  **note:panEdgeFraction limits pan
+
+	  var desired_range = null, animate;
+	  function approach_range() {
+        if (!desired_range) return;
+        // go halfway there
+        var range = g1.xAxisRange();
+        if (Math.abs(desired_range[0] - range[0]) < 60 &&
+            Math.abs(desired_range[1] - range[1]) < 60) {
+          g1.updateOptions({dateWindow: desired_range});
+          // (do not set another timeout.)
+        } else {
+          var new_range;
+          new_range = [0.5 * (desired_range[0] + range[0]),
+                       0.5 * (desired_range[1] + range[1])];
+          g1.updateOptions({dateWindow: new_range});
+          animate();
+        }
+      }
+
+	  animate = function() {
+        setTimeout(approach_range, 50);
+      };
+
+	  var zoom = function(res) {
+        var w = g1.xAxisRange();
+        desired_range = [ w[0], w[0] + res * 1000 ];
+        animate();
+      };
+
+      var reset = function() {
+        g1.updateOptions({
+        	dateWindow: null,
+        	valueRange: null
+        });
+      };
+
+      var pan = function(dir) {
+        var w = g1.xAxisRange();
+        var scale = w[1] - w[0];
+        var amount = scale * 0.25 * dir;
+        desired_range = [ w[0] + amount, w[1] + amount ];
+        animate();
+      };
+
+      document.getElementById('hour').onclick = function() { zoom(3600); };
+      document.getElementById('day').onclick = function() { zoom(86400); };
+      document.getElementById('week').onclick = function() { zoom(604800); };
+      document.getElementById('month').onclick = function() { zoom(30 * 86400); };
+      document.getElementById('reset').onclick = function() { reset(); };
+      document.getElementById('left').onclick = function() { pan(-1); };
+      document.getElementById('right').onclick = function() { pan(+1); };
+	</script>
+</body>
+</html>
